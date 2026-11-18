@@ -157,3 +157,47 @@ def test_form_posts_to_the_update_route(app, client, test_user):
 def test_palette_values_defaults_with_no_selection():
     assert palette_values(None, "C major") == {
         "pitch": "C", "octave": 4, "duration": "quarter", "accidental": "", "is_rest": False}
+
+
+
+# --- NTT-127: Keep note selected after a failed edit --------------------
+
+def test_failed_edit_keeps_selection_and_attempted_palette(logged_in_client, piece):
+    note = note_at(piece, 1)
+    note_id = note.id
+
+    response = logged_in_client.post(
+        f"/compositions/{piece.id}/notes/{note_id}",
+        data={
+            "pitch": "C",
+            "octave": "3",
+            "duration": "eighth",
+            "accidental": "sharp",
+        },
+    )
+
+    assert response.status_code == 400
+    html = response.get_data(as_text=True)
+    expected_error = compositions.note_range_error(
+        "C", "3", "sharp", piece.key_signature
+    )
+    assert expected_error is not None
+    assert expected_error in html
+
+
+    # The original note remains selected.
+    assert "Edit note 1" in html
+    assert f'action="/compositions/{piece.id}/notes/{note_id}"' in form_tag(html)
+
+    # The palette retains the user's attempted values.
+    assert checked(html, "pitch") == "C"
+    assert checked(html, "octave") == "3"
+    assert checked(html, "duration") == "eighth"
+    assert checked(html, "accidental") == "sharp"
+
+    # The invalid edit must not change the saved note.
+    db.session.expire_all()
+    saved_note = db.session.get(Note, note_id)
+    assert saved_note.pitch == "E"
+    assert saved_note.octave == 5
+    assert saved_note.duration == "half"

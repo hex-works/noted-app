@@ -395,12 +395,12 @@ def update_note_url(composition, note):
         return None
 
 
-def render_editor(composition, preview=False, selected_note=None):
+def render_editor(composition, preview=False, selected_note=None, palette_override=None):
     return render_template(
         "compositions/editor.html",
         composition=composition,
         selected_note=selected_note,
-        palette=palette_values(selected_note, getattr(composition, "key_signature", None)),
+        palette=palette_override if palette_override is not None else palette_values(selected_note, getattr(composition, "key_signature", None)),
         update_note_url=None if preview else update_note_url(composition, selected_note),
         staff_svg=staff_svg_for(composition),
         pitches=PITCHES,
@@ -496,9 +496,22 @@ def update_note(composition_id, note_id):
                 pitch, octave, accidental, composition.key_signature
             )
 
+
     if error:
         flash(error, "error")
-        return render_editor(composition), 400
+        attempted_palette = {
+            "pitch": pitch,
+            "octave": octave,
+            "duration": duration,
+            "accidental": accidental,
+            "is_rest": is_rest,
+        }
+        return render_editor(
+            composition,
+            selected_note=note,
+            palette_override=attempted_palette,
+        ), 400
+
 
     note.pitch = None if is_rest else pitch
     note.octave = None if is_rest else int(octave)
