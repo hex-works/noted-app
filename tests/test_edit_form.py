@@ -159,7 +159,6 @@ def test_palette_values_defaults_with_no_selection():
         "pitch": "C", "octave": 4, "duration": "quarter", "accidental": "", "is_rest": False}
 
 
-
 # --- NTT-127: Keep note selected after a failed edit --------------------
 
 def test_failed_edit_keeps_selection_and_attempted_palette(logged_in_client, piece):
