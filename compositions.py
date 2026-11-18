@@ -400,7 +400,9 @@ def render_editor(composition, preview=False, selected_note=None, palette_overri
         "compositions/editor.html",
         composition=composition,
         selected_note=selected_note,
-        palette=palette_override if palette_override is not None else palette_values(selected_note, getattr(composition, "key_signature", None)),
+        palette=palette_override 
+        if palette_override is not None 
+        else palette_values(selected_note, getattr(composition, "key_signature", None)),
         update_note_url=None if preview else update_note_url(composition, selected_note),
         staff_svg=staff_svg_for(composition),
         pitches=PITCHES,
@@ -495,7 +497,6 @@ def update_note(composition_id, note_id):
             error = note_range_error(
                 pitch, octave, accidental, composition.key_signature
             )
-
 
     if error:
         flash(error, "error")
