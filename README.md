@@ -1026,3 +1026,35 @@ The three most important things we learned about software development, agreed at
 2. **Review PRs quickly and communicate clearly.** Our biggest delays came from PRs waiting days for review, and from branches that went out of date and conflicted. When #41 was merged with a teammate's change request still open, the fix had to come later in its own PR (#61). Small PRs, quick reviews and clear "depends on" notes keep the whole team moving.
 
 3. **Testing makes teamwork more reliable.** With five people changing the same app, tests let us change code without breaking each other's work. Daniel's US-09 test caught a missing tempo error message before it shipped, and the GitHub Action now runs all 555 tests on every PR.
+
+## Running locally with PostgreSQL
+
+SQLite remains the default when DATABASE_URL is unset.
+Install and start PostgreSQL locally, then activate the project virtual environment.
+On macOS with Postgres.app 17, add its tools to this terminal:
+
+    export PATH="/Applications/Postgres.app/Contents/Versions/17/bin:$PATH"
+
+From the project directory, run:
+
+    python -m pip install -r requirements.txt
+    createdb noted_local
+    export DATABASE_URL="postgresql+psycopg://localhost/noted_local"
+    flask --app app init-db
+    flask --app app upgrade-library-db
+    flask --app app seed-demo
+    flask --app app run --port 5001
+
+Create noted_local only once. This URL uses your operating-system username;
+configure credentials if your local server requires them. Keep credentials out of Git.
+Both postgres and postgresql URL schemes automatically select the Psycopg 3 driver.
+The upgrade command supports SQLite and PostgreSQL and can be repeated.
+seed-demo resets the demo account's pieces; use it only for development.
+
+To return to SQLite, run:
+
+    unset DATABASE_URL
+
+The tests continue using isolated SQLite databases:
+
+    python -m pytest -q
