@@ -1058,3 +1058,21 @@ To return to SQLite, run:
 The tests continue using isolated SQLite databases:
 
     python -m pytest -q
+
+## Production settings
+
+On the live server, set these environment variables:
+
+| Variable | Value |
+|---|---|
+| `APP_ENV` | `production` |
+| `SECRET_KEY` | A long random string, kept private (e.g. from `python -c "import secrets; print(secrets.token_hex(32))"`) |
+| `DATABASE_URL` | The host's Postgres URL |
+
+With `APP_ENV=production`, the app refuses to start without a real `SECRET_KEY`, turns debug off, sends cookies over HTTPS only, and trusts the host's proxy headers.
+
+Start it with gunicorn instead of `flask run`:
+
+    gunicorn "app:create_app()"
+
+Local development and the tests don't set `APP_ENV`, so they work as before.
