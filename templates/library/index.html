@@ -4,7 +4,17 @@
 
 {% block content %}
 <h1>My Library</h1>
-
+<form method="get" action="{{ url_for('library.index') }}">
+    <label for="search">Search compositions</label>
+    <input
+        type="search"
+        id="search"
+        name="q"
+        placeholder="Search by title..."
+        value="{{ request.args.get('q', '') }}"
+    >
+    <button class="btn btn-primary" type="submit">Search</button>
+</form>
 {% for composition in compositions %}
 <article class="card">
     <h2><a href="{{ url_for('compositions.editor', composition_id=composition.id) }}">{{ composition.title }}</a></h2>
@@ -16,7 +26,12 @@
     </p>
 </article>
 {% else %}
-<p>No compositions yet</p>
-<a class="btn btn-primary" href="/compositions/new">New composition</a>
+    {% if request.args.get("q", "").strip() %}
+        <p>No compositions found.</p>
+        <a href="{{ url_for('library.index') }}">Clear search</a>
+    {% else %}
+        <p>No compositions yet</p>
+        <a class="btn btn-primary" href="/compositions/new">New composition</a>
+    {% endif %}
 {% endfor %}
 {% endblock %}
