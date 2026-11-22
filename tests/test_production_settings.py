@@ -1,5 +1,6 @@
 """Production settings for NTT-122."""
 import pytest
+from flask import request, url_for
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 from app import create_app
@@ -37,11 +38,55 @@ def test_production_settings(monkeypatch):
     assert app.config["SESSION_COOKIE_SAMESITE"] == "Lax"
 
 
-def test_production_trusts_the_proxy_https_header(monkeypatch):
+def production_app_with_scheme_route(monkeypatch):
     monkeypatch.setenv("APP_ENV", "production")
     monkeypatch.setenv("SECRET_KEY", "a-long-random-production-key")
     app = create_app(TEST_DB)
+
+    @app.get("/_test/scheme")
+    def scheme():
+        return {
+            "scheme": request.scheme,
+            "host": request.host,
+            "remote_addr": request.remote_addr,
+            "health_url": url_for("health", _external=True),
+        }
+
+    return app
+
+
+def test_production_trusts_the_proxy_https_header(monkeypatch):
+    app = production_app_with_scheme_route(monkeypatch)
     assert isinstance(app.wsgi_app, ProxyFix)
+
+    data = app.test_client().get(
+        "/_test/scheme", headers={"X-Forwarded-Proto": "https"}
+    ).get_json()
+
+    assert data["scheme"] == "https"
+    assert data["health_url"] == "https://localhost/health"
+
+
+def test_production_without_the_header_stays_http(monkeypatch):
+    app = production_app_with_scheme_route(monkeypatch)
+    data = app.test_client().get("/_test/scheme").get_json()
+    assert data["scheme"] == "http"
+
+
+def test_production_ignores_forwarded_for_and_host(monkeypatch):
+    app = production_app_with_scheme_route(monkeypatch)
+    data = app.test_client().get(
+        "/_test/scheme",
+        headers={
+            "X-Forwarded-Proto": "https",
+            "X-Forwarded-For": "203.0.113.9",
+            "X-Forwarded-Host": "evil.example",
+        },
+    ).get_json()
+
+    assert data["host"] == "localhost"
+    assert data["remote_addr"] != "203.0.113.9"
+    assert data["health_url"] == "https://localhost/health"
 
 
 def test_development_does_not_add_the_proxy_fix(monkeypatch):

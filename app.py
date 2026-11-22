@@ -22,8 +22,11 @@ def configure_production(app):
         SESSION_COOKIE_SAMESITE="Lax",
         REMEMBER_COOKIE_SECURE=True,
     )
-    # The host's proxy handles HTTPS; trust its headers so redirects use https.
-    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
+    # Render ends HTTPS at one proxy in front of the app and sets
+    # X-Forwarded-Proto to "https". Trust only that header, from one hop, so
+    # generated URLs use https. X-Forwarded-For and X-Forwarded-Host are not
+    # trusted: the app doesn't need them, and clients can send their own.
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=0, x_proto=1, x_host=0)
 
 
 def create_app(test_config=None):
