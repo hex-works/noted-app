@@ -1,5 +1,3 @@
-# Change to test Automation
-
 # Noted! (Team Hinton)
 
 IST 303: Intro to Software Development, Fall 2026, Claremont Graduate University
