@@ -51,7 +51,7 @@ def test_search_no_results(logged_in_client, test_user):
 
     html = response.get_data(as_text=True)
 
-    assert "No compositions found." in html
+    assert "No compositions match" in html
     assert "Clear search" in html
     assert "Class Demo" not in html
 def test_search_only_shows_own_compositions(logged_in_client, test_user):
@@ -89,3 +89,44 @@ def test_search_only_shows_own_compositions(logged_in_client, test_user):
 
     assert "My Secret Song" in html
     assert "Other Secret Song" not in html
+def test_search_special_characters(logged_in_client, test_user):
+    db.session.add_all([
+        Composition(
+            user_id=test_user.id,
+            title="100% Music",
+            key_signature="C major",
+            time_signature="4/4",
+            tempo=100,
+        ),
+        Composition(
+            user_id=test_user.id,
+            title="My_Song",
+            key_signature="C major",
+            time_signature="4/4",
+            tempo=100,
+        ),
+        Composition(
+            user_id=test_user.id,
+            title="Normal Song",
+            key_signature="C major",
+            time_signature="4/4",
+            tempo=100,
+        ),
+    ])
+    db.session.commit()
+
+    response = logged_in_client.get("/library/?q=%25")
+    html = response.get_data(as_text=True)
+
+    assert response.status_code == 200
+    assert "100% Music" in html
+    assert "Normal Song" not in html
+    assert "My_Song" not in html
+
+    response = logged_in_client.get("/library/?q=_")
+    html = response.get_data(as_text=True)
+
+    assert response.status_code == 200
+    assert "My_Song" in html
+    assert "Normal Song" not in html
+    assert "100% Music" not in html

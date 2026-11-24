@@ -17,7 +17,7 @@ def index():
 
     if q:
         query = query.where(
-            func.lower(Composition.title).contains(q.lower())
+           func.lower(Composition.title).contains(q.lower(), autoescape=True)
         )
 
     compositions = db.session.execute(

@@ -27,7 +27,7 @@
 </article>
 {% else %}
     {% if request.args.get("q", "").strip() %}
-        <p>No compositions found.</p>
+        <p>No compositions match</p>
         <a href="{{ url_for('library.index') }}">Clear search</a>
     {% else %}
         <p>No compositions yet</p>
