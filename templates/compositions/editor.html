@@ -118,7 +118,7 @@
       <fieldset class="choice-group" id="octave-group">
         <legend>Octave</legend>
         {% for o in octaves %}
-          <input class="choice-input" type="radio" name="octave" id="octave-{{ o }}" value="{{ o }}" {% if o == palette.octave %}checked{% endif %}>
+          <input class="choice-input" type="radio" name="octave" id="octave-{{ o }}" value="{{ o }}" {% if o|string == palette.octave|string %}checked{% endif %}>
           <label class="choice" for="octave-{{ o }}">{{ o }}</label>
         {% endfor %}
       </fieldset>

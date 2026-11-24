@@ -9,7 +9,7 @@ from models import Composition, Note, User, db
 @click.command("init-db")
 @with_appcontext
 def init_db_command():
-    """Initialize the SQLite database tables."""
+    """Initialize the database tables."""
     db.create_all()
     click.echo("Database initialized successfully.")
 
@@ -84,13 +84,13 @@ def register_db_commands(app):
 @click.command("upgrade-library-db")
 @with_appcontext
 def upgrade_library_db_command():
-    """Add the library timestamp to an existing SQLite database."""
+    """Add the library timestamp to an existing SQLite or PostgreSQL database."""
     from datetime import datetime, timezone
     from sqlalchemy import inspect, text
     from models import db
 
-    if db.engine.dialect.name != "sqlite":
-        raise click.ClickException("This upgrade command supports SQLite only.")
+    if db.engine.dialect.name not in {"sqlite", "postgresql"}:
+        raise click.ClickException("This upgrade supports SQLite and PostgreSQL.")
 
     with db.engine.begin() as connection:
         inspector = inspect(connection)
@@ -103,9 +103,10 @@ def upgrade_library_db_command():
             return
 
         timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+        column_type = db.DateTime().compile(dialect=connection.dialect)
         connection.execute(text(
             "ALTER TABLE compositions ADD COLUMN updated_at "
-            f"DATETIME NOT NULL DEFAULT '{timestamp}'"
+            f"{column_type} NOT NULL DEFAULT '{timestamp}'"
         ))
 
     click.echo("Library timestamp added; existing compositions preserved.")
