@@ -1058,3 +1058,23 @@ To return to SQLite, run:
 The tests continue using isolated SQLite databases:
 
     python -m pytest -q
+
+## Production settings
+
+On the live server, set these environment variables:
+
+| Variable | Value |
+|---|---|
+| `APP_ENV` | `production` |
+| `SECRET_KEY` | A long random string, kept private (e.g. from `python -c "import secrets; print(secrets.token_hex(32))"`) |
+| `DATABASE_URL` | The host's Postgres URL |
+
+With `APP_ENV=production`, the app refuses to start without a real `SECRET_KEY`, turns debug off, and sends cookies over HTTPS only.
+
+Render ends HTTPS at one proxy in front of the app and sets `X-Forwarded-Proto: https` (per Render support). The app trusts only that header, from one hop, so the URLs it builds use `https`. It ignores `X-Forwarded-For` and `X-Forwarded-Host`: nothing in the app uses them, and Render passes on client-supplied `X-Forwarded-For` values, so they can't be trusted. If we move to a host with more than one proxy in front of the app, update `ProxyFix` in `app.py`.
+
+Start it with gunicorn instead of `flask run`:
+
+    gunicorn "app:create_app()"
+
+Local development and the tests don't set `APP_ENV`, so they work as before.
